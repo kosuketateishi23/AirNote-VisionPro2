@@ -1,7 +1,8 @@
 import Foundation
 import simd
+import UIKit
 
-struct Card: Identifiable, Codable {
+struct Card: Identifiable, Codable, Equatable {
     var id = UUID()
     var english: String
     var japanese: String
@@ -10,12 +11,13 @@ struct Card: Identifiable, Codable {
     var colorName: String
     var position: SIMD3<Float>
     var rotation: simd_quatf
+    var size: String // サイズを保持するプロパティ
 
     enum CodingKeys: CodingKey {
-        case id, english, japanese, partOfSpeech, memo, colorName, position, rotation
+        case id, english, japanese, partOfSpeech, memo, colorName, position, rotation, size
     }
 
-    init(english: String, japanese: String, partOfSpeech: String, memo: String, colorName: String, position: SIMD3<Float>, rotation: simd_quatf) {
+    init(english: String, japanese: String, partOfSpeech: String, memo: String, colorName: String, position: SIMD3<Float>, rotation: simd_quatf, size: String) {
         self.english = english
         self.japanese = japanese
         self.partOfSpeech = partOfSpeech
@@ -23,6 +25,7 @@ struct Card: Identifiable, Codable {
         self.colorName = colorName
         self.position = position
         self.rotation = rotation
+        self.size = size
     }
 
     init(from decoder: Decoder) throws {
@@ -36,6 +39,7 @@ struct Card: Identifiable, Codable {
         position = try container.decode(SIMD3<Float>.self, forKey: .position)
         let rotationArray = try container.decode([Float].self, forKey: .rotation)
         rotation = simd_quatf(ix: rotationArray[0], iy: rotationArray[1], iz: rotationArray[2], r: rotationArray[3])
+        size = try container.decodeIfPresent(String.self, forKey: .size) ?? "大"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -48,5 +52,6 @@ struct Card: Identifiable, Codable {
         try container.encode(colorName, forKey: .colorName)
         try container.encode(position, forKey: .position)
         try container.encode([rotation.imag.x, rotation.imag.y, rotation.imag.z, rotation.real], forKey: .rotation)
+        try container.encode(size, forKey: .size)
     }
 }

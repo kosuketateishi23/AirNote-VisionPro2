@@ -8,14 +8,15 @@ struct AddCardView: View {
     @State private var memo = ""
     @Binding var redrawTrigger: Bool
     @State private var selectedColor = "beige"
+    @State private var selectedSize = "大" // サイズ選択用のState
     
     var onDismissTapped: () -> Void = {}
 
     let partsOfSpeech = ["名詞", "動詞", "形容詞", "副詞", "熟語", "接続詞", "その他"]
+    let sizes = ["小", "中", "大"] // サイズの選択肢
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // 🔳 閉じる（削除）ボタン：左上に配置（赤 ×）
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Button(action: {
                     onDismissTapped()
@@ -60,6 +61,24 @@ struct AddCardView: View {
                 .textFieldStyle(.roundedBorder)
                 .foregroundColor(.black)
 
+            // サイズ選択のUI
+            Text("サイズ").font(.headline).padding(.leading)
+            HStack(spacing: 12) {
+                ForEach(sizes, id: \.self) { size in
+                    Text(size)
+                        .font(.subheadline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(selectedSize == size ? Color.accentColor : Color.gray.opacity(0.2))
+                        .foregroundColor(selectedSize == size ? .white : .black)
+                        .cornerRadius(12)
+                        .onTapGesture {
+                            selectedSize = size
+                        }
+                }
+            }
+            .padding(.horizontal)
+            
             HStack(spacing: 12) {
                 ForEach(["beige", "pink", "blue", "green", "gray"], id: \.self) { color in
                     Circle()
@@ -86,11 +105,11 @@ struct AddCardView: View {
                     memo: memo,
                     colorName: selectedColor,
                     position: SIMD3<Float>(0, 0, 0),
-                    rotation: simd_quatf()
+                    rotation: simd_quatf(),
+                    size: selectedSize // 保存時にサイズを渡す
                 )
                 CardStore.shared.addCard(newCard)
                 onDismissTapped()
-                print("🟢 カード追加: \(newCard.english)")
                 redrawTrigger.toggle()
                 dismiss()
             }
@@ -99,13 +118,10 @@ struct AddCardView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 500, height: 480)
-        .background(.white)
+        .frame(width: 500, height: 580) // 高さを広げる
+        .background(.white.opacity(0.9))
         .cornerRadius(20)
         .shadow(radius: 10)
-        .onAppear {
-            print("🟠 AddCardView 表示")
-        }
     }
 
     func materialColor(from name: String) -> Color {

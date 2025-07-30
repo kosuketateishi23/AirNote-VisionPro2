@@ -52,5 +52,15 @@ def Xform "Root"
         float3 xformOp:translate = (0, 2.9802322e-8, 0)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
     }
+
+    def "reverseflip" (
+        active = true
+        prepend references = @reverseflip.usdz@
+    )
+    {
+        float3 xformOp:scale = (1, 1, 1)
+        float3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
 }
 
