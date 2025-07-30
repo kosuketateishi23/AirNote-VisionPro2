@@ -17,9 +17,21 @@ class NoteCardEntity: Entity, HasModel, HasCollision {
         let cardHeight: Float = 0.2
         let cardSize = SIMD3<Float>(cardWidth, cardHeight, 0.005)
 
-        let backgroundColor = UIColor(red: 255/255, green: 251/255, blue: 236/255, alpha: 1.0)
+        let baseColor: UIColor
+        switch card.colorName {
+        case "pink":
+            baseColor = UIColor(red: 1.0, green: 0.92, blue: 0.93, alpha: 1.0)
+        case "blue":
+            baseColor = UIColor(red: 0.9, green: 0.95, blue: 1.0, alpha: 1.0)
+        case "green":
+            baseColor = UIColor(red: 0.9, green: 1.0, blue: 0.9, alpha: 1.0)
+        case "gray":
+            baseColor = UIColor(white: 0.95, alpha: 1.0)
+        default:
+            baseColor = UIColor(red: 1.0, green: 0.98, blue: 0.9, alpha: 1.0) // beige
+        }
 
-        let frontImage = NoteCardEntity.imageWithText(card.english, backgroundColor: backgroundColor)
+        let frontImage = NoteCardEntity.imageWithText(card.english, backgroundColor: baseColor)
         let frontTexture = try! TextureResource(image: frontImage.cgImage!, options: .init(semantic: .color))
         var frontMat = UnlitMaterial()
         frontMat.color.texture = MaterialParameters.Texture(frontTexture)
@@ -30,7 +42,7 @@ class NoteCardEntity: Entity, HasModel, HasCollision {
             japanese: card.japanese,
             partOfSpeech: card.partOfSpeech,
             memo: card.memo,
-            backgroundColor: backgroundColor
+            backgroundColor: baseColor
         )
         let backTexture = try! TextureResource(image: backImage.cgImage!, options: .init(semantic: .color))
         var backMat = UnlitMaterial()
