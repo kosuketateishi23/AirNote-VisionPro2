@@ -1,71 +1,80 @@
 import SwiftUI
 import RealityKit
+import RealityKitContent
 
-// 🧩 アプリのメインビュー
 struct ContentView: View {
     @ObservedObject var cardStore = CardStore.shared
-    @State private var showAddCardView = true  // ✅ カード追加ビューの表示制御
-    @State private var redrawTrigger = false   // ✅ RealityViewの再描画トリガー
-    @State private var draggingCard: NoteCardEntity? = nil  // ✅ 移動中のカードを保持
+    @State private var showAddCardView = true
+    @State private var redrawTrigger = false
+    @State private var draggingCard: ModeledNoteCardEntity? = nil
+    
+    // Reality Composer Proから読み込んだシーンを保持するState
+    @State private var cardTemplateEntity: Entity?
 
     var body: some View {
         ZStack {
             // 🧱 RealityKitの3D空間表示
             RealityView { content in
-                content.entities.removeAll()
+                // 最初に一度だけ、テンプレートとなるシーンを読み込む
+                if cardTemplateEntity == nil {
+                    Task {
+                        do {
+                            let scene = try await Entity(named: "Scene", in: realityKitContentBundle)
+                            self.cardTemplateEntity = scene
+                            // 読み込み完了後、再描画をトリガー
+                            redrawTrigger.toggle()
+                        } catch {
+                            print("🚨 Reality Composer Proのシーン読み込みに失敗: \(error)")
+                        }
+                    }
+                }
+                
+                // テンプレートが読み込めていればカードを生成
+                if let cardTemplateEntity {
+                    content.entities.removeAll()
 
-                for card in cardStore.cards {
-                    print("🔁 描画対象カード: \(card.english)")
-                    let cardEntity = NoteCardEntity(card: card)
-                    cardEntity.position = card.position
-                    cardEntity.orientation = card.rotation
-                    content.add(cardEntity)
+                    for card in cardStore.cards {
+                        print("🔁 描画対象カード: \(card.english)")
+                        // 新しいModeledNoteCardEntityを使用
+                        let cardEntity = ModeledNoteCardEntity(card: card, sceneTemplate: cardTemplateEntity)
+                        cardEntity.position = card.position
+                        cardEntity.orientation = card.rotation
+                        content.add(cardEntity)
 
-                    if draggingCard?.card.id == card.id {
-                        draggingCard = cardEntity
+                        if draggingCard?.card.id == card.id {
+                            draggingCard = cardEntity
+                        }
                     }
                 }
             }
-            .id(redrawTrigger) // ✅ redrawTriggerが変化するとRealityViewを再生成
-            // 👆 RealityViewにタップジェスチャを追加
+            .id(redrawTrigger)
             .gesture(
                 TapGesture()
                     .targetedToAnyEntity()
                     .onEnded { gesture in
                         var current: Entity? = gesture.entity
 
+                        // タップされたエンティティ階層を遡って処理を決定
                         while let entity = current {
-                            switch entity.name {
-                            case "deleteButton":
-                                // 🗑 削除ボタンが押された場合
-                                if let cardEntity = sequence(first: entity, next: { $0.parent })
-                                    .first(where: { $0 is NoteCardEntity }) as? NoteCardEntity {
+                            if let cardEntity = entity as? ModeledNoteCardEntity {
+                                switch gesture.entity.name {
+                                case "deleteButton":
                                     cardStore.removeCard(cardEntity.card)
-                                    redrawTrigger.toggle()  // ✅ カードを再描画
+                                    redrawTrigger.toggle()
                                     print("🗑 削除: \(cardEntity.card.english)")
                                     return
-                                }
-
-                            case "dragHandle":
-                                // 📌 移動バーが押された場合（カードを前方に移動）
-                                if let cardEntity = sequence(first: entity, next: { $0.parent })
-                                    .first(where: { $0 is NoteCardEntity }) as? NoteCardEntity {
+                                case "dragHandle":
                                     draggingCard = cardEntity
                                     cardEntity.position = SIMD3<Float>(0, 0, -0.5)
                                     print("📌 移動開始: \(cardEntity.card.english)")
                                     return
+                                default:
+                                    // ボタンやハンドル以外（モデル本体）がタップされた場合
+                                    cardEntity.flip()
+                                    return
                                 }
-
-                            default:
-                                break
                             }
-
                             current = entity.parent
-                        }
-
-                        // 🔄 通常タップ（カードの表裏を反転）
-                        if let cardEntity = gesture.entity.parent?.parent as? NoteCardEntity {
-                            cardEntity.flip()
                         }
                     }
             )
@@ -121,12 +130,10 @@ struct ContentView: View {
                 .zIndex(1000)
             }
         }
-        // 📥 アプリ起動時にカードを読み込み
         .onAppear {
             cardStore.loadCards()
         }
-        // 🔁 カード移動後、位置保存と再描画
-        .onChange(of: draggingCard) { newCard in
+        .onChange(of: draggingCard) { _, newCard in
             if let card = newCard {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     if let index = cardStore.cards.firstIndex(where: { $0.id == card.card.id }) {
