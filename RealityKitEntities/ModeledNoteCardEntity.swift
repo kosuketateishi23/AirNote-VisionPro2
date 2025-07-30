@@ -51,15 +51,14 @@ class ModeledNoteCardEntity: Entity {
         self.generateCollisionShapes(recursive: true)
         self.components.set(InputTargetComponent())
         
-        // カードのサイズ情報に基づいてスケールを決定
         let scaleFactor: Float
         switch card.size {
         case "小":
-            scaleFactor = 0.5 // 50%
+            scaleFactor = 0.5
         case "中":
-            scaleFactor = 0.7 // 70%
-        default: // "大" またはその他の場合
-            scaleFactor = 1.0 // 100%
+            scaleFactor = 0.7
+        default:
+            scaleFactor = 1.0
         }
         self.scale = [scaleFactor, scaleFactor, scaleFactor]
     }
@@ -77,6 +76,18 @@ class ModeledNoteCardEntity: Entity {
             baseModel.playAnimation(animationToPlay, transitionDuration: 0.2)
         }
         isFlipped.toggle()
+    }
+    
+    func flip(toFront: Bool) {
+        if toFront && isFlipped {
+            guard let animationToPlay = self.reverseFlipAnimation else { return }
+            baseModel.playAnimation(animationToPlay, transitionDuration: 0.2)
+            isFlipped = false
+        } else if !toFront && !isFlipped {
+            guard let animationToPlay = self.flipAnimation else { return }
+            baseModel.playAnimation(animationToPlay, transitionDuration: 0.2)
+            isFlipped = true
+        }
     }
     
     func playStickAnimation() {
@@ -134,8 +145,8 @@ class ModeledNoteCardEntity: Entity {
 }
 
 // MARK: - Entityを再帰的に検索するためのヘルパー拡張機能
-
 extension Entity {
+    /// 指定された型のすべての子孫エンティティを再帰的に検索する
     func findAllDescendants<T: Entity>(ofType type: T.Type) -> [T] {
         var result: [T] = []
         for child in children {

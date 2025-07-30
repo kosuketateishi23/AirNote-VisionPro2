@@ -3,17 +3,28 @@ import SwiftUI
 struct MainMenuView: View {
     @Binding var showAddCardView: Bool
     @Binding var redrawTrigger: Bool
-    @ObservedObject var cardStore: CardStore  // ✅ 追加
+    @ObservedObject var cardStore: CardStore
+    
+    var onFlipAllToFront: () -> Void = {}
+    var onFlipAllToBack: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 16) {
-            Text("登録済みカード数: \(cardStore.cards.count)")  // ✅ ここも修正
+            Text("登録済みカード数: \(cardStore.cards.count)")
                 .font(.title3)
                 .fontWeight(.semibold)
 
             Button("カードを追加") {
-                print("🟡 カード追加ボタンが押されました")
                 showAddCardView = true
+            }
+            
+            HStack {
+                Button("すべて表に") {
+                    onFlipAllToFront()
+                }
+                Button("すべて裏に") {
+                    onFlipAllToBack()
+                }
             }
             
             Button("全削除") {
