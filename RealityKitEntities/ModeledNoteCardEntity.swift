@@ -44,7 +44,9 @@ class ModeledNoteCardEntity: Entity {
         super.init()
         self.addChild(baseModel)
         
-        playStickAnimation()
+        // ▼▼▼ 変更点 ▼▼▼
+        // initからアニメーション再生ロジックを削除。再生はContentViewが担当する。
+        // playStickAnimation() <- この行を削除
         
         applyTextures()
         addInteractionControls()
@@ -107,12 +109,9 @@ class ModeledNoteCardEntity: Entity {
               let backTexture = try? TextureResource(image: backCGImage, options: .init(semantic: .color)) else { return }
 
         let allModelEntities = baseModel.findAllDescendants(ofType: ModelEntity.self)
-
         if allModelEntities.isEmpty { return }
-
         for modelEntity in allModelEntities {
             guard let materialName = modelEntity.model?.materials.first?.name else { continue }
-            
             if materialName == "BackMaterial" {
                 var newMaterial = SimpleMaterial()
                 newMaterial.color = .init(texture: .init(frontTexture))
@@ -146,7 +145,6 @@ class ModeledNoteCardEntity: Entity {
 
 // MARK: - Entityを再帰的に検索するためのヘルパー拡張機能
 extension Entity {
-    /// 指定された型のすべての子孫エンティティを再帰的に検索する
     func findAllDescendants<T: Entity>(ofType type: T.Type) -> [T] {
         var result: [T] = []
         for child in children {

@@ -6,11 +6,14 @@ class CardStore: ObservableObject {
     static let shared = CardStore()
 
     @Published var cards: [Card] = []
+    
+    var justAddedCardID: UUID? = nil
 
     private let key = "savedCards"
 
     func addCard(_ card: Card) {
         cards.append(card)
+        justAddedCardID = card.id
         saveCards()
     }
 
@@ -34,8 +37,9 @@ class CardStore: ObservableObject {
             }
         }
     }
+    
     func clearAllCards() {
-            cards.removeAll()
-            saveCards()
+        cards.removeAll()
+        saveCards()
     }
 }

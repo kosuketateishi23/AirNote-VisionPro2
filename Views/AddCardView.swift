@@ -6,7 +6,6 @@ struct AddCardView: View {
     @State private var japanese = ""
     @State private var partOfSpeech = "名詞"
     @State private var memo = ""
-    @Binding var redrawTrigger: Bool
     @State private var selectedColor = "beige"
     @State private var selectedSize = "大"
     
@@ -109,16 +108,12 @@ struct AddCardView: View {
                 )
                 CardStore.shared.addCard(newCard)
                 onDismissTapped()
-                redrawTrigger.toggle()
                 dismiss()
             }
             .buttonStyle(.borderedProminent)
 
         }
         .padding()
-        // ▼▼▼ 変更点 ▼▼▼
-        // .frame()を削除し、コンテンツに合わせて高さが自動で決まるように変更。
-        // これにより、ウィンドウサイズとコンテンツのズレの問題を解消します。
         .background(.white.opacity(0.9))
         .cornerRadius(20)
         .shadow(radius: 10)

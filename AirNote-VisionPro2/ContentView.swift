@@ -5,10 +5,12 @@ import RealityKitContent
 struct ContentView: View {
     @ObservedObject var cardStore = CardStore.shared
     @State private var showAddCardView = true
-    @State private var redrawTrigger = false
     
     @State private var cardEntities: [ModeledNoteCardEntity] = []
     @State private var cardTemplateEntity: Entity?
+    
+    // 選択された色フィルターを文字列の配列で保持する
+    @State private var selectedColorFilters: [String] = []
 
     var body: some View {
         ZStack {
@@ -52,8 +54,8 @@ struct ContentView: View {
                 Spacer()
                 MainMenuView(
                     showAddCardView: $showAddCardView,
-                    redrawTrigger: $redrawTrigger,
                     cardStore: cardStore,
+                    selectedColorFilters: $selectedColorFilters,
                     onFlipAllToFront: {
                         for entity in cardEntities {
                             entity.flip(toFront: true)
@@ -79,7 +81,7 @@ struct ContentView: View {
                 VStack {
                     Spacer()
                     
-                    AddCardView(redrawTrigger: $redrawTrigger) {
+                    AddCardView() {
                         showAddCardView = false
                     }
                     .frame(width: 500)
@@ -115,21 +117,37 @@ struct ContentView: View {
         }
         .onChange(of: cardStore.cards) { _, _ in updateCardEntities() }
         .onChange(of: cardTemplateEntity) { _, _ in updateCardEntities() }
-        .onChange(of: redrawTrigger) { _, _ in updateCardEntities() }
+        .onChange(of: selectedColorFilters) { _, _ in updateCardEntities() }
     }
     
     private func updateCardEntities() {
         guard let cardTemplateEntity else { return }
         
         Task {
+            let cardsToDisplay: [Card]
+            if selectedColorFilters.isEmpty {
+                cardsToDisplay = cardStore.cards
+            } else {
+                cardsToDisplay = cardStore.cards.filter { selectedColorFilters.contains($0.colorName) }
+            }
+            
             var newEntities: [ModeledNoteCardEntity] = []
-            for card in cardStore.cards {
+            for card in cardsToDisplay {
                 let cardEntity = ModeledNoteCardEntity(card: card, sceneTemplate: cardTemplateEntity)
                 cardEntity.position = card.position
                 cardEntity.orientation = card.rotation
                 newEntities.append(cardEntity)
             }
+
+            let justAddedEntity = newEntities.first { $0.card.id == CardStore.shared.justAddedCardID }
             self.cardEntities = newEntities
+            CardStore.shared.justAddedCardID = nil
+            
+            try? await Task.sleep(for: .milliseconds(10))
+            
+            await MainActor.run {
+                justAddedEntity?.playStickAnimation()
+            }
         }
     }
 }
