@@ -8,12 +8,12 @@ struct AddCardView: View {
     @State private var memo = ""
     @Binding var redrawTrigger: Bool
     @State private var selectedColor = "beige"
-    @State private var selectedSize = "大" // サイズ選択用のState
+    @State private var selectedSize = "大"
     
     var onDismissTapped: () -> Void = {}
 
     let partsOfSpeech = ["名詞", "動詞", "形容詞", "副詞", "熟語", "接続詞", "その他"]
-    let sizes = ["小", "中", "大"] // サイズの選択肢
+    let sizes = ["小", "中", "大"]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -61,7 +61,6 @@ struct AddCardView: View {
                 .textFieldStyle(.roundedBorder)
                 .foregroundColor(.black)
 
-            // サイズ選択のUI
             Text("サイズ").font(.headline).padding(.leading)
             HStack(spacing: 12) {
                 ForEach(sizes, id: \.self) { size in
@@ -106,7 +105,7 @@ struct AddCardView: View {
                     colorName: selectedColor,
                     position: SIMD3<Float>(0, 0, 0),
                     rotation: simd_quatf(),
-                    size: selectedSize // 保存時にサイズを渡す
+                    size: selectedSize
                 )
                 CardStore.shared.addCard(newCard)
                 onDismissTapped()
@@ -115,10 +114,11 @@ struct AddCardView: View {
             }
             .buttonStyle(.borderedProminent)
 
-            Spacer()
         }
         .padding()
-        .frame(width: 500, height: 580) // 高さを広げる
+        // ▼▼▼ 変更点 ▼▼▼
+        // .frame()を削除し、コンテンツに合わせて高さが自動で決まるように変更。
+        // これにより、ウィンドウサイズとコンテンツのズレの問題を解消します。
         .background(.white.opacity(0.9))
         .cornerRadius(20)
         .shadow(radius: 10)
