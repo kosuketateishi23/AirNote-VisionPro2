@@ -150,13 +150,7 @@ class ModeledNoteCardEntity: Entity {
         
         self.baseModel.addChild(button)
         
-        // ドラッグハンドル
-        let handleMesh = MeshResource.generatePlane(width: 0.15, height: 0.015, cornerRadius: 0.007)
-        let handleMaterial = UnlitMaterial(color: .gray)
-        let dragHandle = ModelEntity(mesh: handleMesh, materials: [handleMaterial])
-        dragHandle.name = "dragHandle"
-        dragHandle.position = [0, -cardHeight / 2 - 0.01, 0.01]
-        self.baseModel.addChild(dragHandle)
+        // ドラッグハンドル削除
         
         self.deleteButton = button
     }

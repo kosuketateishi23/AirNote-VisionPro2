@@ -8,9 +8,55 @@ struct ContentView: View {
     
     @State private var cardEntities: [ModeledNoteCardEntity] = []
     @State private var cardTemplateEntity: Entity?
-    
-    // 選択された色フィルターを文字列の配列で保持する
     @State private var selectedColorFilters: [String] = []
+    
+    // ▼▼▼ 変更点 ▼▼▼
+    // ドラッグ中のエンティティを保持するStateのみでOK
+    @State private var draggedEntity: ModeledNoteCardEntity? = nil
+
+    // ジェスチャーの定義
+    var cardGesture: some Gesture {
+        // ▼▼▼ 変更点 ▼▼▼
+        // DragGestureからEntityTargetValueGestureに変更
+        TapGesture()
+            .targetedToAnyEntity()
+            .onEnded { value in
+                // ドラッグ中でなければタップを処理
+                if let cardEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
+                    if value.entity.name == "deleteButton" {
+                        cardStore.removeCard(cardEntity.card)
+                    } else {
+                        cardEntity.flip()
+                    }
+                }
+            }
+    }
+    
+    var dragGesture: some Gesture {
+        DragGesture()
+            .targetedToAnyEntity()
+            .onChanged { value in
+                // ドラッグ中のエンティティを特定
+                if self.draggedEntity == nil, let targetEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
+                    if value.entity.name != "deleteButton" {
+                        self.draggedEntity = targetEntity
+                    }
+                }
+                
+                if let draggedEntity = self.draggedEntity {
+                    // ドラッグジェスチャーの位置をエンティティの位置に変換
+                    let newPosition = value.convert(value.location3D, from: .local, to: draggedEntity.parent!)
+                    draggedEntity.position = newPosition
+                }
+            }
+            .onEnded { value in
+                if let draggedEntity = self.draggedEntity, let index = cardStore.cards.firstIndex(where: { $0.id == draggedEntity.card.id }) {
+                    cardStore.cards[index].position = draggedEntity.position
+                    cardStore.saveCards()
+                }
+                self.draggedEntity = nil
+            }
+    }
 
     var body: some View {
         ZStack {
@@ -22,32 +68,16 @@ struct ContentView: View {
                     }
                 },
                 update: { content in
+                    guard self.draggedEntity == nil else { return }
+                    
                     content.entities.removeAll()
                     for entity in cardEntities {
                         content.add(entity)
                     }
                 }
             )
-            .gesture(
-                TapGesture()
-                    .targetedToAnyEntity()
-                    .onEnded { gesture in
-                        var current: Entity? = gesture.entity
-                        while let entity = current {
-                            if let cardEntity = entity as? ModeledNoteCardEntity {
-                                switch gesture.entity.name {
-                                case "deleteButton":
-                                    cardStore.removeCard(cardEntity.card)
-                                    return
-                                default:
-                                    cardEntity.flip()
-                                    return
-                                }
-                            }
-                            current = entity.parent
-                        }
-                    }
-            )
+            .gesture(dragGesture)
+            .gesture(cardGesture)
 
             // 📋 下部メニュー（MainMenuView）
             VStack {
@@ -80,12 +110,10 @@ struct ContentView: View {
             if showAddCardView {
                 VStack {
                     Spacer()
-                    
                     AddCardView() {
                         showAddCardView = false
                     }
                     .frame(width: 500)
-
                     Spacer()
                 }
                 .padding(60)
@@ -121,6 +149,7 @@ struct ContentView: View {
     }
     
     private func updateCardEntities() {
+        guard self.draggedEntity == nil else { return }
         guard let cardTemplateEntity else { return }
         
         Task {
@@ -149,5 +178,19 @@ struct ContentView: View {
                 justAddedEntity?.playStickAnimation()
             }
         }
+    }
+}
+
+// Entityの親を辿るためのヘルパー関数
+extension Entity {
+    func findNearestAncestor<T: Entity>(ofType type: T.Type) -> T? {
+        var current: Entity? = self
+        while let entity = current {
+            if let target = entity as? T {
+                return target
+            }
+            current = entity.parent
+        }
+        return nil
     }
 }
