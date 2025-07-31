@@ -11,6 +11,7 @@ class ModeledNoteCardEntity: Entity {
     private var reverseFlipAnimation: AnimationResource?
     private var stickAnimation: AnimationResource?
     private var isFlipped = false
+    private var deleteButton: Entity? // ModelEntityからEntityに変更
 
     init(card: Card, sceneTemplate: Entity) {
         self.card = card
@@ -44,9 +45,10 @@ class ModeledNoteCardEntity: Entity {
         super.init()
         self.addChild(baseModel)
         
-        // ▼▼▼ 変更点 ▼▼▼
-        // initからアニメーション再生ロジックを削除。再生はContentViewが担当する。
-        // playStickAnimation() <- この行を削除
+        if card.id == CardStore.shared.justAddedCardID {
+            playStickAnimation()
+            CardStore.shared.justAddedCardID = nil
+        }
         
         applyTextures()
         addInteractionControls()
@@ -55,12 +57,9 @@ class ModeledNoteCardEntity: Entity {
         
         let scaleFactor: Float
         switch card.size {
-        case "小":
-            scaleFactor = 0.5
-        case "中":
-            scaleFactor = 0.7
-        default:
-            scaleFactor = 1.0
+        case "小": scaleFactor = 0.5
+        case "中": scaleFactor = 0.7
+        default: scaleFactor = 1.0
         }
         self.scale = [scaleFactor, scaleFactor, scaleFactor]
     }
@@ -78,6 +77,7 @@ class ModeledNoteCardEntity: Entity {
             baseModel.playAnimation(animationToPlay, transitionDuration: 0.2)
         }
         isFlipped.toggle()
+        deleteButton?.components[InputTargetComponent.self]?.isEnabled = !isFlipped
     }
     
     func flip(toFront: Bool) {
@@ -90,6 +90,7 @@ class ModeledNoteCardEntity: Entity {
             baseModel.playAnimation(animationToPlay, transitionDuration: 0.2)
             isFlipped = true
         }
+        deleteButton?.components[InputTargetComponent.self]?.isEnabled = !isFlipped
     }
     
     func playStickAnimation() {
@@ -125,21 +126,39 @@ class ModeledNoteCardEntity: Entity {
     }
     
     private func addInteractionControls() {
-        let cardWidth: Float = 0.707, cardHeight: Float = 0.5, buttonSize: Float = 0.03
-        let deleteButton = ModelEntity(mesh: .generatePlane(width: buttonSize, height: buttonSize, cornerRadius: 0.005), materials: [UnlitMaterial(color: .systemRed)])
-        deleteButton.name = "deleteButton"
-        deleteButton.generateCollisionShapes(recursive: true)
-        deleteButton.components.set(InputTargetComponent())
-        deleteButton.position = [ -cardWidth / 2 + 0.01, cardHeight / 2 - 0.01, 0.01 ]
-        self.addChild(deleteButton)
+        let cardWidth: Float = 0.707
+        let cardHeight: Float = 0.5
+        let button3DSize: Float = (50.0 / 512.0) * cardWidth
+        
+        // ▼▼▼ 変更点 ▼▼▼
+        // 1. 見た目を持たない、空のエンティティを作成する
+        let button = Entity()
+        button.name = "deleteButton"
+        
+        // 2. 当たり判定の「形状」を直接コンポーネントとして設定する
+        let buttonShape = ShapeResource.generateBox(size: [button3DSize, button3DSize, 0.002])
+        button.components.set(CollisionComponent(shapes: [buttonShape]))
+        
+        // 3. タップに反応するようにInputTargetComponentを設定する
+        button.components.set(InputTargetComponent())
+        
+        button.position = [
+            -cardWidth / 2 + button3DSize / 2+0.022,
+             cardHeight / 2 - button3DSize / 2-0.024,
+             0.011
+        ]
+        
+        self.baseModel.addChild(button)
+        
+        // ドラッグハンドル
         let handleMesh = MeshResource.generatePlane(width: 0.15, height: 0.015, cornerRadius: 0.007)
         let handleMaterial = UnlitMaterial(color: .gray)
         let dragHandle = ModelEntity(mesh: handleMesh, materials: [handleMaterial])
         dragHandle.name = "dragHandle"
         dragHandle.position = [0, -cardHeight / 2 - 0.01, 0.01]
-        dragHandle.generateCollisionShapes(recursive: true)
-        dragHandle.components.set(InputTargetComponent())
-        self.addChild(dragHandle)
+        self.baseModel.addChild(dragHandle)
+        
+        self.deleteButton = button
     }
 }
 

@@ -1,6 +1,6 @@
 import Foundation
 import simd
-import UIKit
+import UIKit // UIColorを使うためにUIKitをインポート
 
 struct Card: Identifiable, Codable, Equatable {
     var id = UUID()
@@ -11,7 +11,7 @@ struct Card: Identifiable, Codable, Equatable {
     var colorName: String
     var position: SIMD3<Float>
     var rotation: simd_quatf
-    var size: String // サイズを保持するプロパティ
+    var size: String
 
     enum CodingKeys: CodingKey {
         case id, english, japanese, partOfSpeech, memo, colorName, position, rotation, size
@@ -53,5 +53,25 @@ struct Card: Identifiable, Codable, Equatable {
         try container.encode(position, forKey: .position)
         try container.encode([rotation.imag.x, rotation.imag.y, rotation.imag.z, rotation.real], forKey: .rotation)
         try container.encode(size, forKey: .size)
+    }
+}
+
+// ▼▼▼ 変更点 ▼▼▼
+// Cardの拡張機能を、TextureGenerator.swiftからこちらに移動
+extension Card {
+    /// カードの色名（String）から、実際のUIColorを生成して返す便利なプロパティ
+    var uiColor: UIColor {
+        switch self.colorName {
+        case "pink":
+            return UIColor(red: 1.0, green: 0.92, blue: 0.93, alpha: 1.0)
+        case "blue":
+            return UIColor(red: 0.9, green: 0.95, blue: 1.0, alpha: 1.0)
+        case "green":
+            return UIColor(red: 0.9, green: 1.0, blue: 0.9, alpha: 1.0)
+        case "gray":
+            return UIColor(white: 0.95, alpha: 1.0)
+        default: // "beige" もしくは未指定の場合
+            return UIColor(red: 1.0, green: 0.98, blue: 0.9, alpha: 1.0)
+        }
     }
 }
