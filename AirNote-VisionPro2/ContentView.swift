@@ -1,100 +1,38 @@
 import SwiftUI
 import RealityKit
-import RealityKitContent
 
 struct ContentView: View {
+    // AppModelとImmersiveSpace制御用のEnvironmentを取得
+    @Environment(AppModel.self) private var appModel
+    @Environment(\.openImmersiveSpace) private var openImmersiveSpace
+    @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
+    
     @ObservedObject var cardStore = CardStore.shared
-    @State private var showAddCardView = true
-    
-    @State private var cardEntities: [ModeledNoteCardEntity] = []
-    @State private var cardTemplateEntity: Entity?
-    @State private var selectedColorFilters: [String] = []
-    
-    // ▼▼▼ 変更点 ▼▼▼
-    // ドラッグ中のエンティティを保持するStateのみでOK
-    @State private var draggedEntity: ModeledNoteCardEntity? = nil
-
-    // ジェスチャーの定義
-    var cardGesture: some Gesture {
-        // ▼▼▼ 変更点 ▼▼▼
-        // DragGestureからEntityTargetValueGestureに変更
-        TapGesture()
-            .targetedToAnyEntity()
-            .onEnded { value in
-                // ドラッグ中でなければタップを処理
-                if let cardEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
-                    if value.entity.name == "deleteButton" {
-                        cardStore.removeCard(cardEntity.card)
-                    } else {
-                        cardEntity.flip()
-                    }
-                }
-            }
-    }
-    
-    var dragGesture: some Gesture {
-        DragGesture()
-            .targetedToAnyEntity()
-            .onChanged { value in
-                // ドラッグ中のエンティティを特定
-                if self.draggedEntity == nil, let targetEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
-                    if value.entity.name != "deleteButton" {
-                        self.draggedEntity = targetEntity
-                    }
-                }
-                
-                if let draggedEntity = self.draggedEntity {
-                    // ドラッグジェスチャーの位置をエンティティの位置に変換
-                    let newPosition = value.convert(value.location3D, from: .local, to: draggedEntity.parent!)
-                    draggedEntity.position = newPosition
-                }
-            }
-            .onEnded { value in
-                if let draggedEntity = self.draggedEntity, let index = cardStore.cards.firstIndex(where: { $0.id == draggedEntity.card.id }) {
-                    cardStore.cards[index].position = draggedEntity.position
-                    cardStore.saveCards()
-                }
-                self.draggedEntity = nil
-            }
-    }
+    @State private var showAddCardView = false
 
     var body: some View {
         ZStack {
-            // 🧱 RealityKitの3D空間表示
-            RealityView(
-                make: { content in
-                    Task {
-                        self.cardTemplateEntity = try? await Entity(named: "Scene", in: realityKitContentBundle)
-                    }
-                },
-                update: { content in
-                    guard self.draggedEntity == nil else { return }
-                    
-                    content.entities.removeAll()
-                    for entity in cardEntities {
-                        content.add(entity)
-                    }
-                }
-            )
-            .gesture(dragGesture)
-            .gesture(cardGesture)
-
-            // 📋 下部メニュー（MainMenuView）
+            // UI要素のみを管理
             VStack {
+                Text("AirNote コントロールパネル")
+                    .font(.extraLargeTitle2)
+                    .fontWeight(.light)
+                    .padding(.top, 40)
+
                 Spacer()
+                
+                // MainMenuViewにはCardStoreのフィルター状態をバインディングで渡す
                 MainMenuView(
                     showAddCardView: $showAddCardView,
                     cardStore: cardStore,
-                    selectedColorFilters: $selectedColorFilters,
+                    selectedColorFilters: $cardStore.selectedColorFilters, // CardStoreの状態をバインド
                     onFlipAllToFront: {
-                        for entity in cardEntities {
-                            entity.flip(toFront: true)
-                        }
+                        // ImmersiveViewに「すべて表に」を通知
+                        NotificationCenter.default.post(name: .flipAllCards, object: true)
                     },
                     onFlipAllToBack: {
-                        for entity in cardEntities {
-                            entity.flip(toFront: false)
-                        }
+                        // ImmersiveViewに「すべて裏に」を通知
+                        NotificationCenter.default.post(name: .flipAllCards, object: false)
                     }
                 )
                 .frame(maxWidth: 400)
@@ -103,10 +41,9 @@ struct ContentView: View {
                 .cornerRadius(16)
                 .shadow(radius: 10)
                 .padding()
-                .zIndex(500)
             }
 
-            // ➕ カード追加ビューの表示切り替え
+            // カード追加ビューの表示切り替え
             if showAddCardView {
                 VStack {
                     Spacer()
@@ -120,77 +57,24 @@ struct ContentView: View {
                 .transition(.opacity)
                 .zIndex(999)
 
-            } else {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: { showAddCardView = true }) {
-                            Image(systemName: "plus")
-                                .font(.title)
-                                .foregroundColor(.white)
-                                .frame(width: 44, height: 44)
-                                .background(Color.green)
-                                .clipShape(Circle())
-                                .shadow(radius: 5)
-                        }
-                        .padding()
-                    }
-                }
-                .zIndex(1000)
             }
         }
         .onAppear {
+            // 保存されたカードを読み込む
             cardStore.loadCards()
-        }
-        .onChange(of: cardStore.cards) { _, _ in updateCardEntities() }
-        .onChange(of: cardTemplateEntity) { _, _ in updateCardEntities() }
-        .onChange(of: selectedColorFilters) { _, _ in updateCardEntities() }
-    }
-    
-    private func updateCardEntities() {
-        guard self.draggedEntity == nil else { return }
-        guard let cardTemplateEntity else { return }
-        
-        Task {
-            let cardsToDisplay: [Card]
-            if selectedColorFilters.isEmpty {
-                cardsToDisplay = cardStore.cards
-            } else {
-                cardsToDisplay = cardStore.cards.filter { selectedColorFilters.contains($0.colorName) }
-            }
             
-            var newEntities: [ModeledNoteCardEntity] = []
-            for card in cardsToDisplay {
-                let cardEntity = ModeledNoteCardEntity(card: card, sceneTemplate: cardTemplateEntity)
-                cardEntity.position = card.position
-                cardEntity.orientation = card.rotation
-                newEntities.append(cardEntity)
-            }
-
-            let justAddedEntity = newEntities.first { $0.card.id == CardStore.shared.justAddedCardID }
-            self.cardEntities = newEntities
-            CardStore.shared.justAddedCardID = nil
-            
-            try? await Task.sleep(for: .milliseconds(10))
-            
-            await MainActor.run {
-                justAddedEntity?.playStickAnimation()
+            // ▼▼▼ 変更点 ▼▼▼
+            // イマーシブ空間がまだ開かれていなければ、自動で開く
+            if appModel.immersiveSpaceState == .closed {
+                Task {
+                    await openImmersiveSpace(id: appModel.immersiveSpaceID)
+                }
             }
         }
     }
 }
 
-// Entityの親を辿るためのヘルパー関数
-extension Entity {
-    func findNearestAncestor<T: Entity>(ofType type: T.Type) -> T? {
-        var current: Entity? = self
-        while let entity = current {
-            if let target = entity as? T {
-                return target
-            }
-            current = entity.parent
-        }
-        return nil
-    }
+// ImmersiveViewと通信するためのNotification Name
+extension Notification.Name {
+    static let flipAllCards = Notification.Name("flipAllCards")
 }

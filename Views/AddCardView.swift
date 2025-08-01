@@ -1,3 +1,10 @@
+//
+//  AddCardView.swift
+//  AirNote-VisionPro2
+//
+//  Created by Kosuke Tateishi on 2025/07/29.
+//
+
 import SwiftUI
 
 struct AddCardView: View {
@@ -96,19 +103,19 @@ struct AddCardView: View {
             .padding(.top, 10)
 
             Button("保存") {
+                // ▼▼▼ 修正点: 仮の位置情報でCardを作成 ▼▼▼
                 let newCard = Card(
                     english: english,
                     japanese: japanese,
                     partOfSpeech: partOfSpeech,
                     memo: memo,
                     colorName: selectedColor,
-                    position: SIMD3<Float>(0, 0, 0),
+                    position: [0, 0, 0], // 仮の位置
                     rotation: simd_quatf(),
                     size: selectedSize
                 )
                 CardStore.shared.addCard(newCard)
                 onDismissTapped()
-                dismiss()
             }
             .buttonStyle(.borderedProminent)
 

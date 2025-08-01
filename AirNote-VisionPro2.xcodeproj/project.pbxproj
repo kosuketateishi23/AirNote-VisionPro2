@@ -14,9 +14,7 @@
 		3F340B842E38FA7C00740B73 /* CardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F340B812E38FA7C00740B73 /* CardStore.swift */; };
 		3F340B8A2E38FAA100740B73 /* MainMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F340B882E38FAA100740B73 /* MainMenuView.swift */; };
 		3F340B8B2E38FAA100740B73 /* AddCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F340B852E38FAA100740B73 /* AddCardView.swift */; };
-		3F340B8C2E38FAA100740B73 /* CardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F340B872E38FAA100740B73 /* CardListView.swift */; };
 		3F340B8D2E38FAA100740B73 /* CardDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F340B862E38FAA100740B73 /* CardDetailView.swift */; };
-		3F340B912E38FAB500740B73 /* CardAnchorEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F340B8E2E38FAB500740B73 /* CardAnchorEntity.swift */; };
 		3F340B922E38FAB500740B73 /* NoteCardEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F340B8F2E38FAB500740B73 /* NoteCardEntity.swift */; };
 /* End PBXBuildFile section */
 
@@ -40,9 +38,7 @@
 		3F340B812E38FA7C00740B73 /* CardStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardStore.swift; sourceTree = "<group>"; };
 		3F340B852E38FAA100740B73 /* AddCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCardView.swift; sourceTree = "<group>"; };
 		3F340B862E38FAA100740B73 /* CardDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardDetailView.swift; sourceTree = "<group>"; };
-		3F340B872E38FAA100740B73 /* CardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardListView.swift; sourceTree = "<group>"; };
 		3F340B882E38FAA100740B73 /* MainMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainMenuView.swift; sourceTree = "<group>"; };
-		3F340B8E2E38FAB500740B73 /* CardAnchorEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardAnchorEntity.swift; sourceTree = "<group>"; };
 		3F340B8F2E38FAB500740B73 /* NoteCardEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteCardEntity.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -135,7 +131,6 @@
 			children = (
 				3F340B852E38FAA100740B73 /* AddCardView.swift */,
 				3F340B862E38FAA100740B73 /* CardDetailView.swift */,
-				3F340B872E38FAA100740B73 /* CardListView.swift */,
 				3F340B882E38FAA100740B73 /* MainMenuView.swift */,
 			);
 			path = Views;
@@ -146,7 +141,6 @@
 			children = (
 				202F240E2E39EF73001F4AB0 /* TextureGenerator.swift */,
 				202F240C2E39EE93001F4AB0 /* ModeledNoteCardEntity.swift */,
-				3F340B8E2E38FAB500740B73 /* CardAnchorEntity.swift */,
 				3F340B8F2E38FAB500740B73 /* NoteCardEntity.swift */,
 			);
 			path = RealityKitEntities;
@@ -264,13 +258,11 @@
 			files = (
 				3F340B8A2E38FAA100740B73 /* MainMenuView.swift in Sources */,
 				3F340B8B2E38FAA100740B73 /* AddCardView.swift in Sources */,
-				3F340B8C2E38FAA100740B73 /* CardListView.swift in Sources */,
 				3F340B8D2E38FAA100740B73 /* CardDetailView.swift in Sources */,
 				202F240F2E39EF7C001F4AB0 /* TextureGenerator.swift in Sources */,
 				202F240D2E39EE9C001F4AB0 /* ModeledNoteCardEntity.swift in Sources */,
 				3F340B832E38FA7C00740B73 /* Card.swift in Sources */,
 				3F340B842E38FA7C00740B73 /* CardStore.swift in Sources */,
-				3F340B912E38FAB500740B73 /* CardAnchorEntity.swift in Sources */,
 				3F340B922E38FAB500740B73 /* NoteCardEntity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -18,6 +18,8 @@ struct AirNote_VisionPro2App: App {
                 .environment(appModel)
         }
         .windowStyle(.volumetric)
+        // ウィンドウの初期サイズを少し小さめに調整
+        .defaultSize(width: 0.6, height: 0.7, depth: 0.1, in: .meters)
 
         ImmersiveSpace(id: appModel.immersiveSpaceID) {
             ImmersiveView()
