@@ -8,6 +8,7 @@
 import SwiftUI
 import RealityKit
 import RealityKitContent
+import ARKit
 
 struct ImmersiveView: View {
     @ObservedObject var cardStore = CardStore.shared
@@ -16,6 +17,9 @@ struct ImmersiveView: View {
     @State private var cardTemplateEntity: Entity?
     @State private var draggedEntity: ModeledNoteCardEntity? = nil
 
+    @State private var arkitSession = ARKitSession()
+    @State private var worldTracking = WorldTrackingProvider()
+    
     var dragGesture: some Gesture {
         DragGesture(minimumDistance: 5.0)
             .targetedToAnyEntity()
@@ -82,6 +86,46 @@ struct ImmersiveView: View {
                 entity.flip(toFront: toFront)
             }
         }
+        .onAppear {
+            Task {
+                try? await arkitSession.run([worldTracking])
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .addCardRequested)) { notification in
+            handleCardAddition(notification: notification)
+        }
+    }
+    
+    private func handleCardAddition(notification: Notification) {
+        guard let cardData = notification.object as? [String: Any],
+              let deviceAnchor = worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) else {
+            return
+        }
+        
+        // ▼▼▼ 修正点 1: 正式なプロパティ名を使用 ▼▼▼
+        let cameraTransform = deviceAnchor.originFromAnchorTransform
+        
+        // 視点の1.5m前方にカードを配置する座標を計算
+        var translation = matrix_identity_float4x4
+        translation.columns.3.z = -1.5 // 1.5m奥へ
+        let positionTransform = cameraTransform * translation
+        
+        let position = SIMD3<Float>(positionTransform.columns.3.x, positionTransform.columns.3.y, positionTransform.columns.3.z)
+        // ▼▼▼ 修正点 2: 引数ラベル 'from:' を削除 ▼▼▼
+        let rotation = simd_quatf(positionTransform)
+        
+        let newCard = Card(
+            english: cardData["english"] as? String ?? "",
+            japanese: cardData["japanese"] as? String ?? "",
+            partOfSpeech: cardData["partOfSpeech"] as? String ?? "",
+            memo: cardData["memo"] as? String ?? "",
+            colorName: cardData["colorName"] as? String ?? "beige",
+            position: position,
+            rotation: rotation,
+            size: cardData["size"] as? String ?? "大"
+        )
+        
+        CardStore.shared.addCard(newCard)
     }
     
     private func updateCardEntities() {

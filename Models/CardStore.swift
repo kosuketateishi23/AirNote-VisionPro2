@@ -19,14 +19,11 @@ class CardStore: ObservableObject {
 
     private let key = "savedCards"
 
-    // ▼▼▼ 修正点: 固定座標をここで設定するロジックに戻す ▼▼▼
+    // ▼▼▼ 変更点 ▼▼▼
+    // 固定座標を設定するロジックを削除し、渡されたcardをそのまま追加する
     func addCard(_ card: Card) {
-        var newCard = card
-        // 新規カードの初期位置をユーザーの正面1.5m奥、少し上の位置に設定
-        newCard.position = [0, 1.5, -1.6]
-        
-        cards.append(newCard)
-        justAddedCardID = newCard.id
+        cards.append(card)
+        justAddedCardID = card.id
         saveCards()
     }
 

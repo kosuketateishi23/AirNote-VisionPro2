@@ -103,22 +103,20 @@ struct AddCardView: View {
             .padding(.top, 10)
 
             Button("保存") {
-                // ▼▼▼ 修正点: 仮の位置情報でCardを作成 ▼▼▼
-                let newCard = Card(
-                    english: english,
-                    japanese: japanese,
-                    partOfSpeech: partOfSpeech,
-                    memo: memo,
-                    colorName: selectedColor,
-                    position: [0, 0, 0], // 仮の位置
-                    rotation: simd_quatf(),
-                    size: selectedSize
-                )
-                CardStore.shared.addCard(newCard)
+                // ▼▼▼ 変更点 ▼▼▼
+                // CardStoreに直接追加するのではなく、辞書データを作成して通知する
+                let cardData: [String: Any] = [
+                    "english": english,
+                    "japanese": japanese,
+                    "partOfSpeech": partOfSpeech,
+                    "memo": memo,
+                    "colorName": selectedColor,
+                    "size": selectedSize
+                ]
+                NotificationCenter.default.post(name: .addCardRequested, object: cardData)
                 onDismissTapped()
             }
             .buttonStyle(.borderedProminent)
-
         }
         .padding()
         .background(.white.opacity(0.9))

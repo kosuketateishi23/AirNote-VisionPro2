@@ -77,4 +77,6 @@ struct ContentView: View {
 // ImmersiveViewと通信するためのNotification Name
 extension Notification.Name {
     static let flipAllCards = Notification.Name("flipAllCards")
+    // ▼▼▼ 追加 ▼▼▼
+    static let addCardRequested = Notification.Name("addCardRequested")
 }
