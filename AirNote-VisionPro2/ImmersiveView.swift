@@ -12,6 +12,7 @@ import ARKit
 
 struct ImmersiveView: View {
     @ObservedObject var cardStore = CardStore.shared
+    @Environment(AppModel.self) private var appModel
     
     @State private var cardEntities: [ModeledNoteCardEntity] = []
     @State private var cardTemplateEntity: Entity?
@@ -58,7 +59,7 @@ struct ImmersiveView: View {
             }
     }
 
-    var body: some View {
+    private var realityViewContent: some View {
         RealityView(
             make: { content in
                 Task {
@@ -77,52 +78,62 @@ struct ImmersiveView: View {
         )
         .gesture(dragGesture)
         .gesture(tapGesture)
-        .onChange(of: cardStore.cards) { _, _ in updateCardEntities() }
-        .onChange(of: cardStore.selectedColorFilters) { _, _ in updateCardEntities() }
-        .onChange(of: cardTemplateEntity) { _, _ in updateCardEntities() }
-        .onReceive(NotificationCenter.default.publisher(for: .flipAllCards)) { notification in
-            guard let toFront = notification.object as? Bool else { return }
-            for entity in cardEntities {
-                entity.flip(toFront: toFront)
-            }
-        }
-        .onAppear {
-            Task {
-                try? await arkitSession.run([worldTracking])
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .addCardRequested)) { notification in
-            handleCardAddition(notification: notification)
-        }
     }
     
-    private func handleCardAddition(notification: Notification) {
-        guard let cardData = notification.object as? [String: Any],
-              let deviceAnchor = worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) else {
+    private var viewWithEntityUpdates: some View {
+        realityViewContent
+            .onChange(of: cardStore.cards) { _, _ in updateCardEntities() }
+            .onChange(of: cardStore.selectedColorFilters) { _, _ in updateCardEntities() }
+            .onChange(of: cardTemplateEntity) { _, _ in updateCardEntities() }
+    }
+
+    var body: some View {
+        viewWithEntityUpdates
+            .onAppear {
+                Task {
+                    try? await arkitSession.run([worldTracking])
+                }
+            }
+            .onChange(of: appModel.addCardRequest) { _, newRequest in
+                guard let cardData = newRequest else { return }
+                handleCardAddition(cardData: cardData)
+                appModel.didAddCard()
+            }
+            .onChange(of: appModel.flipAllRequest) { _, newRequest in
+                guard let direction = newRequest else { return }
+                let toFront = (direction == .front)
+                for entity in cardEntities {
+                    entity.flip(toFront: toFront)
+                }
+                appModel.didFlipAll()
+            }
+    }
+    
+    // ▼▼▼ 修正点: 引数の型をAddCardRequestDataに変更 ▼▼▼
+    private func handleCardAddition(cardData: AddCardRequestData) {
+        guard let deviceAnchor = worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) else {
             return
         }
         
-        // ▼▼▼ 修正点 1: 正式なプロパティ名を使用 ▼▼▼
         let cameraTransform = deviceAnchor.originFromAnchorTransform
         
-        // 視点の1.5m前方にカードを配置する座標を計算
         var translation = matrix_identity_float4x4
-        translation.columns.3.z = -1.5 // 1.5m奥へ
+        translation.columns.3.z = -1.5
         let positionTransform = cameraTransform * translation
         
         let position = SIMD3<Float>(positionTransform.columns.3.x, positionTransform.columns.3.y, positionTransform.columns.3.z)
-        // ▼▼▼ 修正点 2: 引数ラベル 'from:' を削除 ▼▼▼
         let rotation = simd_quatf(positionTransform)
         
+        // ▼▼▼ 修正点: 構造体のプロパティから値を取得 ▼▼▼
         let newCard = Card(
-            english: cardData["english"] as? String ?? "",
-            japanese: cardData["japanese"] as? String ?? "",
-            partOfSpeech: cardData["partOfSpeech"] as? String ?? "",
-            memo: cardData["memo"] as? String ?? "",
-            colorName: cardData["colorName"] as? String ?? "beige",
+            english: cardData.english,
+            japanese: cardData.japanese,
+            partOfSpeech: cardData.partOfSpeech,
+            memo: cardData.memo,
+            colorName: cardData.colorName,
             position: position,
             rotation: rotation,
-            size: cardData["size"] as? String ?? "大"
+            size: cardData.size
         )
         
         CardStore.shared.addCard(newCard)

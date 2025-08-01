@@ -2,7 +2,6 @@ import SwiftUI
 import RealityKit
 
 struct ContentView: View {
-    // AppModelとImmersiveSpace制御用のEnvironmentを取得
     @Environment(AppModel.self) private var appModel
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
@@ -12,7 +11,6 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // UI要素のみを管理
             VStack {
                 Text("AirNote コントロールパネル")
                     .font(.extraLargeTitle2)
@@ -21,19 +19,10 @@ struct ContentView: View {
 
                 Spacer()
                 
-                // MainMenuViewにはCardStoreのフィルター状態をバインディングで渡す
                 MainMenuView(
                     showAddCardView: $showAddCardView,
                     cardStore: cardStore,
-                    selectedColorFilters: $cardStore.selectedColorFilters, // CardStoreの状態をバインド
-                    onFlipAllToFront: {
-                        // ImmersiveViewに「すべて表に」を通知
-                        NotificationCenter.default.post(name: .flipAllCards, object: true)
-                    },
-                    onFlipAllToBack: {
-                        // ImmersiveViewに「すべて裏に」を通知
-                        NotificationCenter.default.post(name: .flipAllCards, object: false)
-                    }
+                    selectedColorFilters: $cardStore.selectedColorFilters
                 )
                 .frame(maxWidth: 400)
                 .padding()
@@ -43,7 +32,6 @@ struct ContentView: View {
                 .padding()
             }
 
-            // カード追加ビューの表示切り替え
             if showAddCardView {
                 VStack {
                     Spacer()
@@ -60,11 +48,8 @@ struct ContentView: View {
             }
         }
         .onAppear {
-            // 保存されたカードを読み込む
             cardStore.loadCards()
             
-            // ▼▼▼ 変更点 ▼▼▼
-            // イマーシブ空間がまだ開かれていなければ、自動で開く
             if appModel.immersiveSpaceState == .closed {
                 Task {
                     await openImmersiveSpace(id: appModel.immersiveSpaceID)
@@ -72,11 +57,4 @@ struct ContentView: View {
             }
         }
     }
-}
-
-// ImmersiveViewと通信するためのNotification Name
-extension Notification.Name {
-    static let flipAllCards = Notification.Name("flipAllCards")
-    // ▼▼▼ 追加 ▼▼▼
-    static let addCardRequested = Notification.Name("addCardRequested")
 }

@@ -5,8 +5,7 @@ struct MainMenuView: View {
     @ObservedObject var cardStore: CardStore
     @Binding var selectedColorFilters: [String]
     
-    var onFlipAllToFront: () -> Void = {}
-    var onFlipAllToBack: () -> Void = {}
+    @Environment(AppModel.self) private var appModel
 
     private let colors = ["beige", "pink", "blue", "green", "gray"]
 
@@ -63,10 +62,10 @@ struct MainMenuView: View {
             
             HStack {
                 Button("すべて表に") {
-                    onFlipAllToFront()
+                    appModel.requestFlipAll(toFront: true)
                 }
                 Button("すべて裏に") {
-                    onFlipAllToBack()
+                    appModel.requestFlipAll(toFront: false)
                 }
             }
             

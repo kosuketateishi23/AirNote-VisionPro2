@@ -9,6 +9,8 @@ import SwiftUI
 
 struct AddCardView: View {
     @Environment(\.dismiss) var dismiss
+    @Environment(AppModel.self) private var appModel
+    
     @State private var english = ""
     @State private var japanese = ""
     @State private var partOfSpeech = "名詞"
@@ -103,20 +105,20 @@ struct AddCardView: View {
             .padding(.top, 10)
 
             Button("保存") {
-                // ▼▼▼ 変更点 ▼▼▼
-                // CardStoreに直接追加するのではなく、辞書データを作成して通知する
-                let cardData: [String: Any] = [
-                    "english": english,
-                    "japanese": japanese,
-                    "partOfSpeech": partOfSpeech,
-                    "memo": memo,
-                    "colorName": selectedColor,
-                    "size": selectedSize
-                ]
-                NotificationCenter.default.post(name: .addCardRequested, object: cardData)
+                // ▼▼▼ 修正点: 辞書の代わりにAddCardRequestData構造体を作成 ▼▼▼
+                let cardData = AddCardRequestData(
+                    english: english,
+                    japanese: japanese,
+                    partOfSpeech: partOfSpeech,
+                    memo: memo,
+                    colorName: selectedColor,
+                    size: selectedSize
+                )
+                appModel.requestAddCard(data: cardData)
                 onDismissTapped()
             }
             .buttonStyle(.borderedProminent)
+
         }
         .padding()
         .background(.white.opacity(0.9))
