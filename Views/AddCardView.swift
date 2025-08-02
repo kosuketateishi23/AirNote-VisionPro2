@@ -60,6 +60,7 @@ struct AddCardView: View {
                             .onTapGesture {
                                 partOfSpeech = part
                             }
+                            .hoverEffect() 
                     }
                 }
                 .padding(.horizontal)
@@ -82,6 +83,7 @@ struct AddCardView: View {
                         .onTapGesture {
                             selectedSize = size
                         }
+                    .hoverEffect()
                 }
             }
             .padding(.horizontal)

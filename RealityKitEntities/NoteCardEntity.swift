@@ -111,6 +111,7 @@ class NoteCardEntity: Entity, HasModel, HasCollision {
         self.generateCollisionShapes(recursive: true)
         self.collision = CollisionComponent(shapes: [.generateBox(size: cardSize)])
         self.components.set(InputTargetComponent())
+        self.components.set(HoverEffectComponent())
     }
 
     required init() {

@@ -54,6 +54,7 @@ class ModeledNoteCardEntity: Entity {
         addInteractionControls()
         self.generateCollisionShapes(recursive: true)
         self.components.set(InputTargetComponent())
+        self.components.set(HoverEffectComponent())
         
         let scaleFactor: Float
         switch card.size {
