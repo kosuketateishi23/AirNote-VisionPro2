@@ -18,6 +18,12 @@ struct ImmersiveView: View {
     @State private var cardTemplateEntity: Entity?
     @State private var draggedEntity: ModeledNoteCardEntity? = nil
 
+    // ▼▼▼ 追加 ▼▼▼
+    // 回転操作の対象エンティティと、操作開始時の向きを保持するState
+    @State private var rotatingEntity: ModeledNoteCardEntity? = nil
+    @State private var initialRotation: simd_quatf? = nil
+    // ▲▲▲ 追加 ▲▲▲
+
     @State private var arkitSession = ARKitSession()
     @State private var worldTracking = WorldTrackingProvider()
     
@@ -25,6 +31,10 @@ struct ImmersiveView: View {
         DragGesture(minimumDistance: 5.0)
             .targetedToAnyEntity()
             .onChanged { value in
+                // ▼▼▼ 変更 ▼▼▼
+                // 回転操作中はドラッグを無効にする
+                guard self.rotatingEntity == nil else { return }
+                
                 if self.draggedEntity == nil, let targetEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
                     if value.entity.name != "deleteButton" {
                         self.draggedEntity = targetEntity
@@ -49,7 +59,11 @@ struct ImmersiveView: View {
         TapGesture()
             .targetedToAnyEntity()
             .onEnded { value in
-                if self.draggedEntity == nil, let cardEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
+                // ▼▼▼ 変更 ▼▼▼
+                // ドラッグ中や回転中はタップを無効にする
+                guard self.draggedEntity == nil, self.rotatingEntity == nil else { return }
+                
+                if let cardEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
                     if value.entity.name == "deleteButton" {
                         cardStore.removeCard(cardEntity.card)
                     } else {
@@ -58,6 +72,55 @@ struct ImmersiveView: View {
                 }
             }
     }
+    
+    // ▼▼▼ 追加 ▼▼▼
+    /// ピンチ＆ツイストによる回転ジェスチャーの定義
+    var rotateGesture: some Gesture {
+        RotateGesture()
+            .targetedToAnyEntity()
+            .onChanged { value in
+                // ドラッグ中は回転を無効にする
+                guard self.draggedEntity == nil else { return }
+
+                // 操作対象のエンティティがまだ設定されていなければ設定
+                if self.rotatingEntity == nil {
+                    // value.entityから一番近いカードエンティティを探す
+                    if let targetEntity = value.entity.findNearestAncestor(ofType: ModeledNoteCardEntity.self) {
+                        self.rotatingEntity = targetEntity
+                        // 操作開始時の向きを保存
+                        self.initialRotation = targetEntity.orientation
+                    }
+                }
+
+                // 対象エンティティと開始時の向きが取得できていれば、回転処理を実行
+                if let rotatingEntity = self.rotatingEntity, let initialRotation = self.initialRotation {
+                    // Y軸（縦軸）回りの回転を計算
+                    let rotation = simd_quatf(angle: Float(value.rotation.radians), axis: [0, 1, 0])
+                    // 開始時の向きに、ジェスチャーによる回転を乗算して、新しい向きを決定
+                    let newOrientation = initialRotation * rotation
+                    rotatingEntity.orientation = newOrientation
+                }
+            }
+            .onEnded { value in
+                // 操作終了時、最終的な向きを計算して保存
+                if let rotatingEntity = self.rotatingEntity,
+                   let initialRotation = self.initialRotation,
+                   let index = cardStore.cards.firstIndex(where: { $0.id == rotatingEntity.card.id }) {
+                    
+                    let rotation = simd_quatf(angle: Float(value.rotation.radians), axis: [0, 1, 0])
+                    let finalOrientation = initialRotation * rotation
+                    
+                    // CardStoreのデータを更新し、永続化
+                    cardStore.cards[index].rotation = finalOrientation
+                    cardStore.saveCards()
+                }
+
+                // Stateをリセット
+                self.rotatingEntity = nil
+                self.initialRotation = nil
+            }
+    }
+    // ▲▲▲ 追加 ▲▲▲
 
     private var realityViewContent: some View {
         RealityView(
@@ -68,7 +131,9 @@ struct ImmersiveView: View {
                 }
             },
             update: { content in
-                guard self.draggedEntity == nil else { return }
+                // ▼▼▼ 変更 ▼▼▼
+                // ドラッグ中・回転中はアップデートをスキップ
+                guard self.draggedEntity == nil, self.rotatingEntity == nil else { return }
                 
                 content.entities.removeAll()
                 for entity in cardEntities {
@@ -76,8 +141,10 @@ struct ImmersiveView: View {
                 }
             }
         )
-        .gesture(dragGesture)
-        .gesture(tapGesture)
+        // ▼▼▼ 変更 ▼▼▼
+        // 3つのジェスチャーを同時に認識できるように設定
+        .gesture(SimultaneousGesture(dragGesture, SimultaneousGesture(tapGesture, rotateGesture)))
+        // ▲▲▲ 変更 ▲▲▲
     }
     
     private var viewWithEntityUpdates: some View {
@@ -109,7 +176,6 @@ struct ImmersiveView: View {
             }
     }
     
-    // ▼▼▼ 修正点: 引数の型をAddCardRequestDataに変更 ▼▼▼
     private func handleCardAddition(cardData: AddCardRequestData) {
         guard let deviceAnchor = worldTracking.queryDeviceAnchor(atTimestamp: CACurrentMediaTime()) else {
             return
@@ -124,7 +190,6 @@ struct ImmersiveView: View {
         let position = SIMD3<Float>(positionTransform.columns.3.x, positionTransform.columns.3.y, positionTransform.columns.3.z)
         let rotation = simd_quatf(positionTransform)
         
-        // ▼▼▼ 修正点: 構造体のプロパティから値を取得 ▼▼▼
         let newCard = Card(
             english: cardData.english,
             japanese: cardData.japanese,
@@ -135,12 +200,14 @@ struct ImmersiveView: View {
             rotation: rotation,
             size: cardData.size
         )
-        
+
         CardStore.shared.addCard(newCard)
     }
     
     private func updateCardEntities() {
-        guard self.draggedEntity == nil else { return }
+        // ▼▼▼ 変更 ▼▼▼
+        // ドラッグ中・回転中はアップデートをスキップ
+        guard self.draggedEntity == nil, self.rotatingEntity == nil else { return }
         guard let cardTemplateEntity else { return }
         
         Task {
