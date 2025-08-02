@@ -6,6 +6,73 @@
 //
 
 import SwiftUI
+import UIKit
+
+/// 指定された言語のキーボードを優先的に返すUITextFieldのサブクラス
+class LanguageTextField: UITextField {
+    private let language: String
+
+    init(language: String) {
+        self.language = language
+        super.init(frame: .zero)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// textInputModeプロパティをオーバーライドして、指定言語のキーボードモードを返す
+    override var textInputMode: UITextInputMode? {
+        // アクティブなキーボードの中から、指定された言語コードに完全一致するものを探す
+        for mode in UITextInputMode.activeInputModes {
+            if let modeLanguage = mode.primaryLanguage, modeLanguage == self.language {
+                return mode
+            }
+        }
+        // 見つからなければデフォルトのキーボードを返す
+        return super.textInputMode
+    }
+}
+
+/// 特定の言語キーボードを優先的に表示するカスタムTextFieldのSwiftUIラッパー
+struct LanguageSpecificTextField: UIViewRepresentable {
+    var placeholder: String
+    @Binding var text: String
+    var language: String // "en-JP", "ja-JP" などの言語コード
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = LanguageTextField(language: language)
+        textField.placeholder = placeholder
+        textField.borderStyle = .roundedRect
+        textField.textColor = .black
+        textField.delegate = context.coordinator
+        
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        uiView.text = text
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: LanguageSpecificTextField
+
+        init(_ textField: LanguageSpecificTextField) {
+            self.parent = textField
+        }
+
+        func textFieldDidChangeSelection(_ textField: UITextField) {
+            DispatchQueue.main.async {
+                self.parent.text = textField.text ?? ""
+            }
+        }
+    }
+}
+
 
 struct AddCardView: View {
     @Environment(\.dismiss) var dismiss
@@ -39,13 +106,13 @@ struct AddCardView: View {
                 Spacer()
             }
 
-            TextField("English", text: $english)
-                .textFieldStyle(.roundedBorder)
-                .foregroundColor(.black)
+            // ▼▼▼ 英語欄には "en-JP" を指定 ▼▼▼
+            LanguageSpecificTextField(placeholder: "English", text: $english, language: "en-JP")
+                .frame(height: 36)
 
-            TextField("Japanese", text: $japanese)
-                .textFieldStyle(.roundedBorder)
-                .foregroundColor(.black)
+            // ▼▼▼ 日本語欄には "ja-JP" を指定 ▼▼▼
+            LanguageSpecificTextField(placeholder: "Japanese", text: $japanese, language: "ja-JP")
+                .frame(height: 36)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -64,10 +131,10 @@ struct AddCardView: View {
                 }
                 .padding(.horizontal)
             }
-
-            TextField("メモ（例文、語法など）", text: $memo)
-                .textFieldStyle(.roundedBorder)
-                .foregroundColor(.black)
+            
+            // ▼▼▼ 備考欄にも "ja-JP" を指定 ▼▼▼
+            LanguageSpecificTextField(placeholder: "メモ（例文、語法など）", text: $memo, language: "ja-JP")
+                .frame(height: 36)
 
             Text("サイズ").font(.headline).padding(.leading)
             HStack(spacing: 12) {
@@ -105,7 +172,6 @@ struct AddCardView: View {
             .padding(.top, 10)
 
             Button("保存") {
-                // ▼▼▼ 修正点: 辞書の代わりにAddCardRequestData構造体を作成 ▼▼▼
                 let cardData = AddCardRequestData(
                     english: english,
                     japanese: japanese,
