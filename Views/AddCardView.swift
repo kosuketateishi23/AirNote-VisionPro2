@@ -57,10 +57,10 @@ struct AddCardView: View {
                             .background(partOfSpeech == part ? Color.brown : Color.gray.opacity(0.2))
                             .foregroundColor(partOfSpeech == part ? .white : .black)
                             .cornerRadius(12)
+                            .hoverEffect()
                             .onTapGesture {
                                 partOfSpeech = part
                             }
-                            .hoverEffect() 
                     }
                 }
                 .padding(.horizontal)
@@ -80,35 +80,36 @@ struct AddCardView: View {
                         .background(selectedSize == size ? Color.accentColor : Color.gray.opacity(0.2))
                         .foregroundColor(selectedSize == size ? .white : .black)
                         .cornerRadius(12)
+                        .hoverEffect()
                         .onTapGesture {
                             selectedSize = size
                         }
-                    .hoverEffect()
                 }
             }
             .padding(.horizontal)
             
             HStack(spacing: 12) {
                 ForEach(["beige", "pink", "blue", "green", "gray"], id: \.self) { color in
-                    Circle()
-                        .fill(materialColor(from: color))
-                        .frame(width: selectedColor == color ? 36 : 28,
-                               height: selectedColor == color ? 36 : 28)
-                        .overlay(
+                    Button(action: {
+                        selectedColor = color
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(materialColor(from: color))
                             Circle()
                                 .stroke(Color.black.opacity(0.3),
                                         lineWidth: selectedColor == color ? 2 : 1)
-                        )
-                        .onTapGesture {
-                            selectedColor = color
                         }
-                        .hoverEffect()
+                        .frame(width: selectedColor == color ? 36 : 28,
+                               height: selectedColor == color ? 36 : 28)
+                    }
+                    .buttonStyle(.plain)
+                    .hoverEffect()
                 }
             }
             .padding(.top, 10)
 
             Button("保存") {
-                // ▼▼▼ 修正点: 辞書の代わりにAddCardRequestData構造体を作成 ▼▼▼
                 let cardData = AddCardRequestData(
                     english: english,
                     japanese: japanese,

@@ -24,32 +24,38 @@ struct MainMenuView: View {
                         .foregroundColor(selectedColorFilters.isEmpty ? .white : .primary)
                         .cornerRadius(8)
                 }
+                .hoverEffect() // 「全色」ボタンにもホバーエフェクトを追加
 
+                // ▼▼▼ 構造をButtonに変更 ▼▼▼
                 ForEach(colors, id: \.self) { color in
                     let isSelected = selectedColorFilters.contains(color)
                     
-                    Circle()
-                        .fill(materialColor(from: color))
-                        .frame(width: 28, height: 28)
-                        .overlay(
-                            ZStack {
-                                if isSelected {
-                                    Circle()
-                                        .stroke(Color.primary.opacity(0.8), lineWidth: 4)
-                                    Image(systemName: "checkmark")
-                                        .font(.caption.bold())
-                                        .foregroundColor(.primary)
-                                }
-                            }
-                        )
-                        .onTapGesture {
-                            if isSelected {
-                                selectedColorFilters.removeAll { $0 == color }
-                            } else {
-                                selectedColorFilters.append(color)
-                            }
+                    Button(action: {
+                        if isSelected {
+                            selectedColorFilters.removeAll { $0 == color }
+                        } else {
+                            selectedColorFilters.append(color)
                         }
+                    }) {
+                        Circle()
+                            .fill(materialColor(from: color))
+                            .frame(width: 28, height: 28)
+                            .overlay(
+                                ZStack {
+                                    if isSelected {
+                                        Circle()
+                                            .stroke(Color.primary.opacity(0.8), lineWidth: 4)
+                                        Image(systemName: "checkmark")
+                                            .font(.caption.bold())
+                                            .foregroundColor(.primary)
+                                    }
+                                }
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .hoverEffect()
                 }
+                // ▲▲▲ ここまで変更 ▲▲▲
             }
             
             Text("登録済みカード数: \(cardStore.cards.count)")
