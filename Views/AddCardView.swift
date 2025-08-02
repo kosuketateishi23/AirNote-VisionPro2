@@ -102,6 +102,7 @@ struct AddCardView: View {
                         .onTapGesture {
                             selectedColor = color
                         }
+                        .hoverEffect()
                 }
             }
             .padding(.top, 10)
