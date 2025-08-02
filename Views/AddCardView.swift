@@ -117,20 +117,20 @@ struct AddCardView: View {
             HStack(spacing: 12) {
                 ForEach(["beige", "pink", "blue", "green", "gray"], id: \.self) { color in
                     Button(action: {
-                        selectedColor = color
-                    }) {
-                        ZStack {
-                            Circle()
-                                .fill(materialColor(from: color))
-                            Circle()
-                                .stroke(Color.black.opacity(0.3),
-                                        lineWidth: selectedColor == color ? 2 : 1)
-                        }
-                        .frame(width: selectedColor == color ? 36 : 28,
-                               height: selectedColor == color ? 36 : 28)
-                    }
-                    .buttonStyle(.plain)
-                    .hoverEffect()
+                                selectedColor = color
+                            }) {
+                                ZStack {
+                                    Circle()
+                                        .fill(materialColor(from: color))
+                                    Circle()
+                                        .stroke(Color.black.opacity(0.3),
+                                                lineWidth: selectedColor == color ? 2 : 1)
+                                }
+                                .frame(width: selectedColor == color ? 36 : 28,
+                                       height: selectedColor == color ? 36 : 28)
+                            }
+                            .buttonStyle(.plain)
+                            .hoverEffect()
                 }
             }
             .padding(.top, 10)
