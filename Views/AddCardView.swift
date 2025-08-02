@@ -1,10 +1,3 @@
-//
-//  AddCardView.swift
-//  AirNote-VisionPro2
-//
-//  Created by Kosuke Tateishi on 2025/07/29.
-//
-
 import SwiftUI
 
 struct AddCardView: View {
@@ -39,13 +32,27 @@ struct AddCardView: View {
                 Spacer()
             }
 
-            TextField("English", text: $english)
-                .textFieldStyle(.roundedBorder)
-                .foregroundColor(.black)
+            // ▼▼▼ 変更: プレースホルダーをカスタマイズ ▼▼▼
+            ZStack(alignment: .leading) {
+                if english.isEmpty {
+                    Text("    English")
+                        .foregroundColor(.black.opacity(0.2))
+                }
+                TextField("", text: $english)
+                    .textFieldStyle(.roundedBorder)
+                    .foregroundColor(.black)
+            }
 
-            TextField("Japanese", text: $japanese)
-                .textFieldStyle(.roundedBorder)
-                .foregroundColor(.black)
+            ZStack(alignment: .leading) {
+                if japanese.isEmpty {
+                    Text("    Japanese")
+                        .foregroundColor(.black.opacity(0.2))
+                }
+                TextField("", text: $japanese)
+                    .textFieldStyle(.roundedBorder)
+                    .foregroundColor(.black)
+            }
+            // ▲▲▲ ここまで変更 ▲▲▲
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -66,11 +73,25 @@ struct AddCardView: View {
                 .padding(.horizontal)
             }
 
-            TextField("メモ（例文、語法など）", text: $memo)
-                .textFieldStyle(.roundedBorder)
-                .foregroundColor(.black)
+            // ▼▼▼ 変更: プレースホルダーをカスタマイズ ▼▼▼
+            ZStack(alignment: .leading) {
+                if memo.isEmpty {
+                    Text("    メモ（例文、語法など）")
+                        .foregroundColor(.black.opacity(0.2))
+                }
+                TextField("", text: $memo)
+                    .textFieldStyle(.roundedBorder)
+                    .foregroundColor(.black)
+            }
+            // ▲▲▲ ここまで変更 ▲▲▲
 
-            Text("サイズ").font(.headline).padding(.leading)
+            // ▼▼▼ 変更: 文字色を黒に指定 ▼▼▼
+            Text("サイズ")
+                .font(.headline)
+                .padding(.leading)
+                .foregroundColor(.black)
+            // ▲▲▲ ここまで変更 ▲▲▲
+            
             HStack(spacing: 12) {
                 ForEach(sizes, id: \.self) { size in
                     Text(size)
@@ -87,6 +108,11 @@ struct AddCardView: View {
                 }
             }
             .padding(.horizontal)
+            
+            Text("色")
+                .font(.headline)
+                .padding(.leading)
+                .foregroundColor(.black)
             
             HStack(spacing: 12) {
                 ForEach(["beige", "pink", "blue", "green", "gray"], id: \.self) { color in
@@ -109,7 +135,7 @@ struct AddCardView: View {
             }
             .padding(.top, 10)
 
-            Button("保存") {
+            Button(action: {
                 let cardData = AddCardRequestData(
                     english: english,
                     japanese: japanese,
@@ -120,9 +146,11 @@ struct AddCardView: View {
                 )
                 appModel.requestAddCard(data: cardData)
                 onDismissTapped()
+            }) {
+                Text("保存")
+                    .foregroundColor(.black.opacity(0.8))
             }
             .buttonStyle(.borderedProminent)
-
         }
         .padding()
         .background(.white.opacity(0.9))
