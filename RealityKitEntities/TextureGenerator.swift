@@ -60,9 +60,9 @@ enum TextureGenerator {
             context.fill(CGRect(origin: .zero, size: size))
             let textColor = UIColor.black
             let padding: CGFloat = 20
-            let engAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 32, weight: .semibold), .foregroundColor: textColor]
+            let engAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 48, weight: .semibold), .foregroundColor: textColor]
             (english as NSString).draw(at: CGPoint(x: padding, y: padding), withAttributes: engAttrs)
-            let posAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 28), .foregroundColor: UIColor.darkGray]
+            let posAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 42), .foregroundColor: UIColor.darkGray]
             let posString = (partOfSpeech as NSString)
             let posSize = posString.size(withAttributes: posAttrs)
             posString.draw(at: CGPoint(x: size.width - padding - posSize.width, y: padding + 4), withAttributes: posAttrs)
@@ -74,7 +74,7 @@ enum TextureGenerator {
             let jpRect = CGRect(x: 10, y: size.height / 2 - 80, width: size.width - 20, height: 160)
             (japanese as NSString).draw(in: jpRect, withAttributes: jpAttrs)
             if !memo.isEmpty {
-                let memoAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 22), .foregroundColor: textColor]
+                let memoAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 33), .foregroundColor: textColor]
                 let memoRect = CGRect(x: 20, y: size.height - 80, width: size.width - 40, height: 60)
                 (memo as NSString).draw(in: memoRect, withAttributes: memoAttrs)
             }
