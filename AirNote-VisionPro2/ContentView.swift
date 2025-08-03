@@ -6,6 +6,9 @@ struct ContentView: View {
     @Environment(\.openImmersiveSpace) private var openImmersiveSpace
     @Environment(\.dismissImmersiveSpace) private var dismissImmersiveSpace
     
+    // ▼▼▼ 1. この行を追加 ▼▼▼
+    @Environment(\.scenePhase) private var scenePhase
+    
     @ObservedObject var cardStore = CardStore.shared
     @State private var showAddCardView = false
 
@@ -45,6 +48,17 @@ struct ContentView: View {
                 .transition(.opacity)
                 .zIndex(999)
 
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // アプリがフォアグラウンドに戻り、アクティブになった時
+            if newPhase == .active {
+                // もしImmersiveSpaceが閉じてしまっていたら、再度開く
+                if appModel.immersiveSpaceState == .closed {
+                    Task {
+                        await openImmersiveSpace(id: appModel.immersiveSpaceID)
+                    }
+                }
             }
         }
         .onAppear {
